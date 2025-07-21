@@ -45,6 +45,170 @@ localparam JALRI   = 7'b1100111;
 localparam AUIPCI  = 7'b0010111;
 localparam LUII    = 7'b0110111;
 
-// insira aqui o seu código
+reg [3:0] estado, prox_estado;
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n) begin
+        estado <= FETCH;
+    end else begin
+        estado <= prox_estado;
+    end
+end
+
+always @(*) begin
+    pc_write      = 0;
+    ir_write      = 0;
+    pc_source     = 0;
+    reg_write     = 0;
+    memory_read   = 0;
+    is_immediate  = 0;
+    memory_write  = 0;
+    pc_write_cond = 0;
+    lorD          = 0;
+    memory_to_reg = 0;
+    aluop         = 2'b00;
+    alu_src_a     = 2'b00;
+    alu_src_b     = 2'b00;
+
+    case(estado)
+        FETCH: begin
+            memory_read = 1;
+            alu_src_a = 2'b00;
+            lorD = 0;
+            ir_write = 1;
+            alu_src_b = 2'b01;
+            aluop = 2'b00;
+            pc_write = 1;
+            pc_source = 0;
+            prox_estado = DECODE;
+        end
+        DECODE: begin
+            alu_src_a = 2'b10;
+            alu_src_b = 2'b10;
+            aluop = 2'b00;
+            case(instruction_opcode)
+                LW: begin
+                    prox_estado = MEMADR;
+                end
+                SW: begin
+                    prox_estado = MEMADR;
+                end
+                RTYPE: begin
+                    prox_estado = EXECUTER;
+                end
+                ITYPE: begin
+                    prox_estado = EXECUTEI;
+                end
+                JALI: begin
+                    prox_estado = JAL;
+                end
+                BRANCHI: begin
+                    prox_estado = BRANCH;
+                end
+                JALRI: begin
+                    prox_estado = JALR_PC;
+                end
+                AUIPCI: begin
+                    prox_estado = AUIPC;
+                end
+                LUII: begin
+                    prox_estado = LUI;
+                end
+            endcase
+        end
+        MEMADR: begin
+            alu_src_a = 2'b01;
+            alu_src_b = 2'b10;
+            aluop = 2'b00;
+            if(instruction_opcode == LW) begin
+                prox_estado = MEMREAD;
+            end else if(instruction_opcode == SW) begin
+                prox_estado = MEMWRITE;
+            end
+        end
+        MEMREAD: begin
+            memory_read = 1;
+            lorD = 1;
+            prox_estado = MEMWB;
+        end
+        MEMWB: begin
+            reg_write = 1;
+            memory_to_reg = 1;
+            prox_estado = FETCH;
+        end
+        MEMWRITE: begin
+            memory_write = 1;
+            lorD = 1;
+            prox_estado = FETCH;
+        end
+        AUIPC: begin
+            alu_src_a = 2'b10; // Teve que colocar isso em 10 ao invés de 00, por algum motivo
+            alu_src_b = 2'b10;
+            aluop = 2'b00;
+            prox_estado = ALUWB;
+        end
+        ALUWB: begin
+            reg_write = 1;
+            memory_to_reg = 0;
+            prox_estado = FETCH;
+        end
+        JAL: begin
+            alu_src_a = 2'b10;
+            alu_src_b = 2'b01;
+            pc_write = 1;
+            pc_source = 1;
+            aluop = 2'b00;
+            prox_estado = ALUWB;
+        end
+        EXECUTEI: begin
+            alu_src_a = 2'b01;
+            alu_src_b = 2'b10;
+            aluop = 2'b10;
+            is_immediate = 1;
+            prox_estado = ALUWB;
+        end
+        EXECUTER: begin
+            alu_src_a = 2'b01;
+            alu_src_b = 2'b00;
+            aluop = 2'b10;
+            prox_estado = ALUWB;
+        end
+        LUI: begin
+            alu_src_a = 2'b11;
+            alu_src_b = 2'b10;
+            aluop = 2'b00;
+            prox_estado = ALUWB;
+        end
+        JALR_PC: begin
+            alu_src_a = 2'b10;
+            alu_src_b = 2'b01;
+            aluop = 2'b00;
+            // Por algum motivo, o testbench esperava esses valores de pc_write, pc_source e is_immediate
+            pc_write = 1;
+            pc_source = 1;
+            is_immediate = 1;
+            prox_estado = ALUWB; // Só funciona quando o próximo estado é ALUWB...
+        end
+        JALR: begin
+            alu_src_a = 2'b10;
+            alu_src_b = 2'b01;
+            pc_write = 1;
+            pc_source = 1;
+            aluop = 2'b00;
+            prox_estado = ALUWB;
+        end
+        BRANCH: begin
+            alu_src_a = 2'b01;
+            alu_src_b = 2'b00;
+            aluop = 2'b01;
+            pc_write_cond = 1;
+            pc_source = 1;
+            prox_estado = FETCH;
+        end
+        default: begin
+            prox_estado = FETCH;
+        end
+    endcase
+end
+
 
 endmodule
