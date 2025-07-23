@@ -179,14 +179,10 @@ always @(*) begin
             prox_estado = ALUWB;
         end
         JALR_PC: begin
-            alu_src_a = 2'b10;
-            alu_src_b = 2'b01;
+            alu_src_a = 2'b01;
+            alu_src_b = 2'b10;
             aluop = 2'b00;
-            // Por algum motivo, o testbench esperava esses valores de pc_write, pc_source e is_immediate
-            pc_write = 1;
-            pc_source = 1;
-            is_immediate = 1;
-            prox_estado = ALUWB; // Só funciona quando o próximo estado é ALUWB...
+            prox_estado = JALR;
         end
         JALR: begin
             alu_src_a = 2'b10;
@@ -194,6 +190,7 @@ always @(*) begin
             pc_write = 1;
             pc_source = 1;
             aluop = 2'b00;
+            is_immediate = 1;
             prox_estado = ALUWB;
         end
         BRANCH: begin
