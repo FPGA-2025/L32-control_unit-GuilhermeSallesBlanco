@@ -38,9 +38,9 @@ Construir o caminho correto para a execução de cada instrução depende de um 
 
 Uma dica para compreender cada parte da máquina de estados é observar o fluxo de cada tipo de instrução: acompanhe a máquina de estados da unidade de controle enquanto vê as partes do caminho de dados que são acionadas.
 
-![state_diagram](state_diagram.png)
+![state_diagram](state_diagram_22_july.png)
 
-![circuit_diagram](circuit_diagram.png)
+![circuit_diagram](datapath_22_july.png)
 
 ## Atividade
 
